@@ -18,7 +18,6 @@ module.exports.timeIt = function( innerFn ) {
     return [totalMilliseconds, result];
 }
 
-
 module.exports.saveDataToFile = function( title, savePath, data ) {
     if( !data )
         throw new Error("Must provide data to save");
@@ -31,8 +30,6 @@ module.exports.saveDataToFile = function( title, savePath, data ) {
 
     return data;
 }
-
-
 
 module.exports.loadDataFromFile = async function( title, loadPath ) {
     console.log(`Loading ${title}...`);
