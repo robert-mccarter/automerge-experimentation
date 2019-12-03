@@ -1,6 +1,7 @@
 // This is how you load Automerge in Node. In a browser, simply including the
 // script tag will set up the Automerge object.
 const Automerge = require('automerge')
+const fs = require('fs');
 const { performance } = require('perf_hooks');
 
 
@@ -90,29 +91,60 @@ function addWidgetsToDoc( doc, numberOfWidgets, preCreatedWidgets, startIndex) {
 }
 
 
+function createLargeDocument(preCreatedWidgets, blockSize) {
+    console.log("Creating document...");
+    let doc = Automerge.from({ widgets: [] });
+
+    // Ensure the block-size is valid
+    const numberOfWidgets = preCreatedWidgets.length;
+    blockSize = blockSize || 1000;
+    if( blockSize > numberOfWidgets )
+        blockSize = Math.floor(numberOfWidgets / 10);
+
+    let timeMs = 0;
+    const timings = [];
+    for( let i=0; i<numberOfWidgets; i+=blockSize ) {
+        // Insert another block of widgets
+        [timeMs, doc] = timeIt( () => addWidgetsToDoc(doc, blockSize, preCreatedWidgets, i) );
+
+        // Print a nice message and record the time
+        const endOfBlock = i+blockSize;
+        timings.push( {endOfBlock, blockSize, timeMs} )
+        console.log(`${endOfBlock} - Added ${blockSize} widgets in ${timeMs}ms`);
+    }
+
+    if( doc.widgets.length == numberOfWidgets )
+         console.log(`Created document with ${numberOfWidgets} widgets`);
+    else console.error(`Failed to create ${numberOfWidgets} - created ${doc.widgets.length}`);
+
+    return [timings, doc];
+}
 
 
-// Let's say doc1 is the application state on device 1.
-// Further down we'll simulate a second device.
-// We initialize the document to initially contain an empty list of widgets.
-let doc1 = Automerge.from({ widgets: [] })
 
-const preCreatedWidgets = preCreateWidgets(100);
-addWidgetsToDoc(doc1, 100, preCreatedWidgets, 0);
+// ////////////////////////////////////////////////////////////////////////////////////////////////
+// Main test code
+// ////////////////////////////////////////////////////////////////////////////////////////////////
+
+function saveDocument( savePath, doc ) {
+    if( !doc )
+        throw new Error("Must provide a document to save");
+    const serialized = Automerge.save(doc);
+    console.log("Saving...");
+    fs.writeFile(savePath, serialized, err => {
+        if( err )
+            return console.log("Failed to serialize: ", err);
+        console.log("Successfully saved");
+    });
+
+    return serialized;
+}
 
 
-doc1 = Automerge.change(doc1, 'Add card', doc => {
-    const object = createRandomWidget();
-    doc.widgets.push(object);
-    doc.widgets.push(object);
+// Run it!
+const numberOfWidgets = 100;
+const blockSize = 10;
+const preCreatedWidgets = preCreateWidgets(numberOfWidgets);
+let [timings, doc1] = createLargeDocument(preCreatedWidgets, blockSize);
 
-    for( let i = 0; i<100; i+=1 ) {
-       doc.widgets.push(  createRandomWidget() );
-    }//for
-})
-
-
-
-const result = Automerge.save(doc1);
-
-console.log( result );
+console.log( saveDocument("c:/tmp/automerge-output.doc.json", doc1) );
