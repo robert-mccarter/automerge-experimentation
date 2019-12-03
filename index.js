@@ -110,11 +110,11 @@ function createLargeDocument(preCreatedWidgets, blockSize) {
         // Print a nice message and record the time
         const endOfBlock = i+blockSize;
         timings.push( {endOfBlock, blockSize, timeMs} )
-        console.log(`${endOfBlock} - Added ${blockSize} widgets in ${timeMs}ms`);
+        console.log(`${endOfBlock} - Added ${blockSize} widgets in ${Math.floor(timeMs)}ms`);
     }
 
     if( doc.widgets.length == numberOfWidgets )
-         console.log(`Created document with ${numberOfWidgets} widgets`);
+         console.log(`Successfully created document with ${numberOfWidgets} widgets`);
     else console.error(`Failed to create ${numberOfWidgets} - created ${doc.widgets.length}`);
 
     return [timings, doc];
