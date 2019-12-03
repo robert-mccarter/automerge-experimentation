@@ -142,9 +142,9 @@ function saveDocument( savePath, doc ) {
 
 
 // Run it!
-const numberOfWidgets = 100;
-const blockSize = 10;
+const numberOfWidgets = 10000;
+const blockSize = 1000;
 const preCreatedWidgets = preCreateWidgets(numberOfWidgets);
 let [timings, doc1] = createLargeDocument(preCreatedWidgets, blockSize);
 
-console.log( saveDocument("c:/tmp/automerge-output.doc.json", doc1) );
+saveDocument("c:/tmp/automerge-output.doc.json", doc1);
