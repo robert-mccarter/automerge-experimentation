@@ -1,36 +1,12 @@
-// This is how you load Automerge in Node. In a browser, simply including the
-// script tag will set up the Automerge object.
 const Automerge = require('automerge')
 const fs = require('fs');
-const { performance } = require('perf_hooks');
-
-
-// ////////////////////////////////////////////////////////////////////////////////////////////////
-// Performance testing functions
-// ////////////////////////////////////////////////////////////////////////////////////////////////
-
-function timeIt( innerFn ) {
-    // "Start" the timer
-    const t0 = performance.now();
-
-    // Call the function we want to performance test
-    const result = innerFn();
-
-    // Grab the resulting end-time and return the results
-    const t1 = performance.now();
-    const totalMilliseconds = t1 - t0;
-    return [totalMilliseconds, result];
-}
-
+const { timeIt, createRandomPosition } = require('./utils');
+const { changeLargeDocument } = require('./change');
 
 
 // ////////////////////////////////////////////////////////////////////////////////////////////////
 // Create Widget functions
 // ////////////////////////////////////////////////////////////////////////////////////////////////
-
-function createRandomPosition() {
-    return Math.floor( Math.random() * 1000 ) - 500;
-}
 
 function makeId(length) {
     var result           = '';
@@ -126,48 +102,6 @@ function createLargeDocument(preCreatedWidgets, blockSize) {
 
 
 // ////////////////////////////////////////////////////////////////////////////////////////////////
-// Change Widget functions
-// ////////////////////////////////////////////////////////////////////////////////////////////////
-
-function changeWidget( doc, widgetIndex) {
-    return automerge.change(doc, 'Add widget', doc => {
-        // Grab the widget
-        console.log("Grabbing widget at: ", widgetIndex);
-        if( widgetIndex > doc.widgets.length )
-            console.error("Invalid index for changing widget: ", widgetIndex);
-        const widget = doc.widgets[widgetIndex];
-
-        // Update some properties of the widget
-        widget.x = createRandomPosition();
-        widget.y = createRandomPosition();
-        widget.changed = true;
-        if( widget.changeCounter )
-            widget.changeCounter += 1;
-        else widget.changeCounter = 1;
-    });
-}
-
-function changeLargeDocument(doc, totalChanges) {
-    console.log("Changing document...");
-
-    let timeMs = 0;
-    const timings = [];
-    for( let i=0; i<totalChanges; i+=1 ) {
-        const len =  doc.widgets.length;
-        const randomChangeIndex =  Math.floor(Math.random()*len);
-        [timeMs, doc] = timeIt( () => changeWidget(doc, randomChangeIndex) );
-
-        timings.push( {i, changed: 1, timeMs} )
-        console.log(`${i} - Changed 1 widgets in ${timeMs}ms`);
-    }
-
-    console.log("Created document");
-    return [timings, doc];
-}
-
-
-
-// ////////////////////////////////////////////////////////////////////////////////////////////////
 // Main test code
 // ////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -181,16 +115,25 @@ function saveDataToFile( title, savePath, data ) {
         console.log(`Successfully saved ${title}`);
     });
 
-    return serialized;
+    return data;
 }
 
 
-// Run it!
-const numberOfWidgets = 10000;
+// Create it!
+const numberOfWidgets = 600;
 const blockSize = 1000;
 const preCreatedWidgets = preCreateWidgets(numberOfWidgets);
 let [timings, doc1] = createLargeDocument(preCreatedWidgets, blockSize);
 
-const serialized = Automerge.save(doc1);
-saveDataToFile( "Document", "c:/tmp/automerge-output.doc.json", serialized);
+const serialized1 = Automerge.save(doc1);
+saveDataToFile( "Document 1", "c:/tmp/automerge-output.doc1.json", serialized1);
 saveDataToFile( "Create timings", "c:/tmp/automerge-create-performance.json", JSON.stringify(timings) );
+
+// Change it!
+const totalNumberOfChanges = 1000;
+let [totalChangeTime, [timings2, doc2]] = timeIt( () => changeLargeDocument(doc1, totalNumberOfChanges) );
+totalChangeTime = Math.floor(totalChangeTime);
+console.log(`Total time to make ${totalNumberOfChanges} changes with ${numberOfWidgets} objects: ${totalChangeTime}ms`);
+const serialized2 = Automerge.save(doc2);
+saveDataToFile( "Document 2", "c:/tmp/automerge-output.doc2.json", serialized2);
+saveDataToFile( "Change timings", "c:/tmp/automerge-change-performance.json", JSON.stringify(timings2) );
