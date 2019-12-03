@@ -125,12 +125,53 @@ function createLargeDocument(preCreatedWidgets, blockSize) {
 }
 
 
+// ////////////////////////////////////////////////////////////////////////////////////////////////
+// Change Widget functions
+// ////////////////////////////////////////////////////////////////////////////////////////////////
+
+function changeWidget( doc, widgetIndex) {
+    return automerge.change(doc, 'Add widget', doc => {
+        // Grab the widget
+        console.log("Grabbing widget at: ", widgetIndex);
+        if( widgetIndex > doc.widgets.length )
+            console.error("Invalid index for changing widget: ", widgetIndex);
+        const widget = doc.widgets[widgetIndex];
+
+        // Update some properties of the widget
+        widget.x = createRandomPosition();
+        widget.y = createRandomPosition();
+        widget.changed = true;
+        if( widget.changeCounter )
+            widget.changeCounter += 1;
+        else widget.changeCounter = 1;
+    });
+}
+
+function changeLargeDocument(doc, totalChanges) {
+    console.log("Changing document...");
+
+    let timeMs = 0;
+    const timings = [];
+    for( let i=0; i<totalChanges; i+=1 ) {
+        const len =  doc.widgets.length;
+        const randomChangeIndex =  Math.floor(Math.random()*len);
+        [timeMs, doc] = timeIt( () => changeWidget(doc, randomChangeIndex) );
+
+        timings.push( {i, changed: 1, timeMs} )
+        console.log(`${i} - Changed 1 widgets in ${timeMs}ms`);
+    }
+
+    console.log("Created document");
+    return [timings, doc];
+}
+
+
 
 // ////////////////////////////////////////////////////////////////////////////////////////////////
 // Main test code
 // ////////////////////////////////////////////////////////////////////////////////////////////////
 
-function saveDocument( title, savePath, data ) {
+function saveDataToFile( title, savePath, data ) {
     if( !data )
         throw new Error("Must provide data to save");
     console.log(`Saving ${title}...`);
@@ -151,5 +192,5 @@ const preCreatedWidgets = preCreateWidgets(numberOfWidgets);
 let [timings, doc1] = createLargeDocument(preCreatedWidgets, blockSize);
 
 const serialized = Automerge.save(doc1);
-saveDocument( "Document", "c:/tmp/automerge-output.doc.json", serialized);
-saveDocument( "Create timings", "c:/tmp/automerge-create-performance.json", JSON.stringify(timings) );
+saveDataToFile( "Document", "c:/tmp/automerge-output.doc.json", serialized);
+saveDataToFile( "Create timings", "c:/tmp/automerge-create-performance.json", JSON.stringify(timings) );
