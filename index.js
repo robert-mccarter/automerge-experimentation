@@ -70,6 +70,10 @@ function preCreateWidgets(numberOfWidgets) {
 }
 
 
+// ////////////////////////////////////////////////////////////////////////////////////////////////
+// Create Automerge document functions
+// ////////////////////////////////////////////////////////////////////////////////////////////////
+
 function addWidgetsToDoc( doc, numberOfWidgets, preCreatedWidgets, startIndex) {
     return Automerge.change(doc, 'Add widget', doc => {
         for( i=0; i<numberOfWidgets; i+=1 ) {
@@ -183,12 +187,16 @@ function saveDocument( savePath, doc ) {
 
 
 // Run it!
-const numberOfWidgets = 50000;
+const numberOfWidgets = 500;
 const blockSize = 1000;
 const preCreatedWidgets = preCreateWidgets(numberOfWidgets);
-let [timings, doc1] = createLargeDocument(preCreatedWidgets, blockSize);
+let [createTimings, doc1] = createLargeDocument(preCreatedWidgets, blockSize);
 
+console.log("Saving document...")
 saveDocument("c:/tmp/automerge-output.doc.json", doc1);
+
+console.log("Saving timings...")
+saveDocument("c:/tmp/automerge-create-performance.json", JSON.stringify(createTimings) );
 
 
 // Now change the document a bunch of times
