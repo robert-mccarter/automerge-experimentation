@@ -1,6 +1,5 @@
 const Automerge = require('automerge')
-const fs = require('fs');
-const { timeIt, createRandomPosition } = require('./utils');
+const { timeIt, createRandomPosition, saveDataToFile } = require('./utils');
 const { changeLargeDocument } = require('./change');
 
 
@@ -105,22 +104,8 @@ function createLargeDocument(preCreatedWidgets, blockSize) {
 // Main test code
 // ////////////////////////////////////////////////////////////////////////////////////////////////
 
-function saveDataToFile( title, savePath, data ) {
-    if( !data )
-        throw new Error("Must provide data to save");
-    console.log(`Saving ${title}...`);
-    fs.writeFile(savePath, data, err => {
-        if( err )
-            return console.log("Failed to serialize: ", err);
-        console.log(`Successfully saved ${title}`);
-    });
-
-    return data;
-}
-
-
 // Create it!
-const numberOfWidgets = 600;
+const numberOfWidgets = 40000;
 const blockSize = 1000;
 const preCreatedWidgets = preCreateWidgets(numberOfWidgets);
 let [timings, doc1] = createLargeDocument(preCreatedWidgets, blockSize);
